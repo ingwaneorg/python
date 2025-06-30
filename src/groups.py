@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Breakout Room Allocator
-Optimises group mixing across 8 sessions for apprenticeship classes
+Optimises group mixing across sessions for apprenticeship classes
 """
 
 import os
@@ -56,7 +56,7 @@ def get_group_sizes(class_size):
     return group_configs[class_size]    
     
 class BreakoutAllocator:
-    def __init__(self, class_size, sessions=SESSIONS):
+    def __init__(self, class_size, sessions):
         self.class_size = class_size
         self.sessions = sessions
         self.learners = [f"L{i+1}" for i in range(class_size)]
@@ -238,12 +238,12 @@ class BreakoutAllocator:
         meetings_per_person = (total_meetings * 2) / len(self.learners)  # *2 because each meeting involves 2 people
         print(f"\nAverage meetings per person: {meetings_per_person:.1f}")
 
-def main(class_size):
+def main(class_size, sessions):
     print("Breakout Room Allocator for Apprenticeship Classes")
     print("=" * 50)
 
     # Create allocator and run
-    allocator = BreakoutAllocator(class_size)
+    allocator = BreakoutAllocator(class_size, sessions)
     allocator.allocate_sessions()
     
     # Print results
@@ -252,7 +252,7 @@ def main(class_size):
     allocator.print_statistics()
     
     print(f"\n{'='*60}")
-    print(f"Allocation complete! Use these groups for your {SESSIONS} breakout sessions.")
+    print(f"Allocation complete! Use these groups for your {sessions} breakout sessions.")
     print(f"{'='*60}")
 
 if __name__ == "__main__":
@@ -267,17 +267,20 @@ if __name__ == "__main__":
         except ValueError:
             print(f"Invalid class size: {sys.argv[1]}. Please use a number 6-18.")
             sys.exit()
-    
     else:
-        # Prompt the user for class size
-        while True:
-            try:
-                class_size = int(input("Enter class size (6-18): "))
-                if 6 <= class_size <= 18:
-                    break
-                else:
-                    print("Please enter a number between 6 and 18")
-            except ValueError:
-                print("Please enter a valid number")
+        print("Please provide class size (6-18) as a command-line argument.")
+        sys.exit(1)
 
-    main(class_size)
+    # Pass in sessions or use default 
+    sessions = SESSIONS  # default
+    if len(sys.argv) > 2:
+        try:
+            sessions = int(sys.argv[2])
+            if sessions < 1 or sessions > SESSIONS:
+                print(f"Number of sessions must be between 1 and {SESSIONS}.")
+                sys.exit()
+        except ValueError:
+            print(f"Invalid number of sessions: {sys.argv[2]}. Please enter a positive integer.")
+            sys.exit()
+
+    main(class_size, sessions)
