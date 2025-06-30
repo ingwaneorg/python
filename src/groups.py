@@ -4,12 +4,37 @@ Breakout Room Allocator
 Optimises group mixing across 8 sessions for apprenticeship classes
 """
 
+import os
+import csv
 import sys
 import itertools
 import random
 from collections import defaultdict, Counter
 
-SESSIONS = 1
+SESSIONS = 8
+LEARNER_CSV = 'data/groups.csv'
+
+def load_learner_dict_from_csv(filename):
+    if not os.path.isfile(filename):
+        # File not found, return default mapping: L1 -> L1, L2 -> L2, ..., L18 -> L18
+        return {f'L{i}': f'L{i}' for i in range(1, 19)}
+    
+    learner_dict = {}
+    try:
+        with open(filename, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                learner_dict[row['Code']] = row['Name']
+        return learner_dict
+    except Exception as e:
+        print(f"Error reading {filename}: {e}")
+        return {f'L{i}': f'L{i}' for i in range(1, 19)}
+
+# Load the learner names
+learner_dict = load_learner_dict_from_csv(LEARNER_CSV)
+
+def get_names_from_codes(code_list, learner_map):
+    return [learner_map.get(code, f"Unknown({code})") for code in code_list]
 
 def get_group_sizes(class_size):
     """Return the optimal group sizes for a given class size"""
@@ -31,13 +56,14 @@ def get_group_sizes(class_size):
     return group_configs[class_size]    
     
 class BreakoutAllocator:
-    def __init__(self, class_size):
+    def __init__(self, class_size, sessions=SESSIONS):
         self.class_size = class_size
-        self.sessions = SESSIONS
+        self.sessions = sessions
         self.learners = [f"L{i+1}" for i in range(class_size)]
         self.session_groups = []
         self.pair_sessions = defaultdict(list)  # Track which sessions each pair appears in
-        
+        self.learner_dict = learner_dict  # store name the mappings
+
     def create_valid_grouping(self, learner_list):
         groups = []
         group_sizes = get_group_sizes(len(learner_list))
@@ -121,7 +147,11 @@ class BreakoutAllocator:
             # Use the best grouping for this session
             self.session_groups.append(best_grouping)
             self.update_pair_tracking(best_grouping, session + 1)
-    
+
+    def translate_group_codes_to_names(self, groups):
+        """Convert groups of codes to groups of names"""
+        return [[self.learner_dict.get(code, code) for code in group] for group in groups]
+
     def print_session_allocations(self):
         """Print the session allocations"""
         print(f"\n{'='*60}")
@@ -130,8 +160,10 @@ class BreakoutAllocator:
         
         for session_idx, groups in enumerate(self.session_groups):
             print(f"\nSESSION {session_idx + 1}:")
+            named_groups = self.translate_group_codes_to_names(groups)
             for group_idx, group in enumerate(groups):
-                print(f"  Room {group_idx + 1}: {', '.join(group)}")
+                learner_names = [self.learner_dict.get(code, code) for code in group]
+                print(f"  Room {group_idx + 1}: {', '.join(learner_names)}")
     
     def print_pair_matrix(self):
         """Print a matrix showing which sessions each pair worked together"""
@@ -206,33 +238,10 @@ class BreakoutAllocator:
         meetings_per_person = (total_meetings * 2) / len(self.learners)  # *2 because each meeting involves 2 people
         print(f"\nAverage meetings per person: {meetings_per_person:.1f}")
 
-def main():
+def main(class_size):
     print("Breakout Room Allocator for Apprenticeship Classes")
     print("=" * 50)
 
-    # Check if class size provided as argument
-    if len(sys.argv) > 1:
-        try:
-            class_size = int(sys.argv[1])
-            if not (6 <= class_size <= 18):
-                print(f"Class size {class_size} not supported. Please use 6-18.")
-                return
-            print(f"Using class size: {class_size}")
-        except ValueError:
-            print(f"Invalid class size: {sys.argv[1]}. Please use a number 6-18.")
-            return
-    else:
-        # Original interactive input
-        while True:
-            try:
-                class_size = int(input("Enter class size (6-18): "))
-                if 6 <= class_size <= 18:
-                    break
-                else:
-                    print("Please enter a number between 6 and 18")
-            except ValueError:
-                print("Please enter a valid number")
-        
     # Create allocator and run
     allocator = BreakoutAllocator(class_size)
     allocator.allocate_sessions()
@@ -247,4 +256,28 @@ def main():
     print(f"{'='*60}")
 
 if __name__ == "__main__":
-    main()
+    # Check if class size provided as argument
+    if len(sys.argv) > 1:
+        try:
+            class_size = int(sys.argv[1])
+            if not (6 <= class_size <= 18):
+                print(f"Class size {class_size} not supported. Please use 6-18.")
+                sys.exit()
+            print(f"Using class size: {class_size}")
+        except ValueError:
+            print(f"Invalid class size: {sys.argv[1]}. Please use a number 6-18.")
+            sys.exit()
+    
+    else:
+        # Prompt the user for class size
+        while True:
+            try:
+                class_size = int(input("Enter class size (6-18): "))
+                if 6 <= class_size <= 18:
+                    break
+                else:
+                    print("Please enter a number between 6 and 18")
+            except ValueError:
+                print("Please enter a valid number")
+
+    main(class_size)
