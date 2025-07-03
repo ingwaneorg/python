@@ -1,9 +1,9 @@
 # Day 1 Instructor Guide: ETL Foundations in Python
 
 ## Session Overview
-**Duration**: 6.5 hours (9:30-16:00)
-**Objective**: Build complete ETL pipeline from scratch using Python
-**Outcome**: Every learner completes a working Extract-Transform-Load solution
+- **Duration**: 6.5 hours (9:30-16:00)
+- **Objective**: Build complete ETL pipeline from scratch using Python
+- **Outcome**: Every learner completes a working Extract-Transform-Load solution
 
 ---
 
