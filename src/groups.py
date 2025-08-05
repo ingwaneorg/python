@@ -15,6 +15,7 @@ SESSIONS = 8
 LEARNER_CSV = 'data/groups.csv'
 
 def load_learner_dict_from_csv(filename):
+    print(filename)
     if not os.path.isfile(filename):
         # File not found, return default mapping: L1 -> L1, L2 -> L2, ..., L18 -> L18
         return {f'L{i}': f'L{i}' for i in range(1, 19)}
@@ -162,8 +163,8 @@ class BreakoutAllocator:
             print(f"\nSESSION {session_idx + 1}:")
             named_groups = self.translate_group_codes_to_names(groups)
             for group_idx, group in enumerate(groups):
-                learner_names = [self.learner_dict.get(code, code) for code in group]
-                print(f"  Room {group_idx + 1}: {', '.join(learner_names)}")
+                learner_names = sorted([self.learner_dict.get(code, code) for code in group])
+                print(f"  Group {group_idx + 1}: {', '.join(learner_names)}")
     
     def print_pair_matrix(self):
         """Print a matrix showing which sessions each pair worked together"""
